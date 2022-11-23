@@ -1,11 +1,38 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"gm_go/config"
+	"gm_go/config/file"
 )
 
 func main() {
-	log.SetFlags(log.Llongfile | log.Lmicroseconds | log.Ldate)
-	log.Println("这是一条很普通的日志。")
+	c := config.New(config.WithSource(file.NewSource("./config.yaml")))
+	if err := c.Load(); err != nil {
+		panic(err)
+	}
+	/**
+	service:
+	  name: config
+	  version: v1.0.0
+	*/
 
+	var v struct {
+		Service struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"service"`
+	}
+
+	//// Unmarshal the config to struct
+	if err := c.Scan(&v); err != nil {
+		panic(err)
+	}
+	fmt.Println(v.Service.Version)
+
+	name, err := c.Value("service.name").String()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(name)
 }

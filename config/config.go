@@ -7,9 +7,7 @@ import (
 )
 
 var (
-	// ErrNotFound is key not found.
 	ErrNotFound = errors.New("key not found")
-	// ErrTypeAssert is type assert error.
 )
 
 type Config interface {
@@ -28,9 +26,11 @@ func New(opts ...Option) Config {
 	o := options{
 		decoder: defaultDecoder,
 	}
+
 	for _, opt := range opts {
 		opt(&o)
 	}
+
 	return &config{
 		opts:   o,
 		reader: newReader(o),
@@ -52,7 +52,6 @@ func (c *config) Load() error {
 		}
 
 	}
-
 	return nil
 }
 

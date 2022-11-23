@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var _ config.Source = (*file)(nil)
+
 type file struct {
 	path string
 }
@@ -30,6 +32,7 @@ func (f *file) loadFile(path string) (*config.KeyValue, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &config.KeyValue{
 		Key:    info.Name(),
 		Format: format(info.Name()),

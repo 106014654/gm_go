@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strconv"
 	"sync/atomic"
-	"time"
 )
 
 type Value interface {
@@ -15,9 +14,6 @@ type Value interface {
 	Int() (int64, error)
 	Float() (float64, error)
 	String() (string, error)
-	Duration() (time.Duration, error)
-	Slice() ([]Value, error)
-	Map() (map[string]Value, error)
 	Scan(interface{}) error
 	Load() interface{}
 	Store(interface{})
@@ -29,6 +25,21 @@ type atomicValue struct {
 
 func (v *atomicValue) typeAssertError() error {
 	return fmt.Errorf("type assert to %v failed", reflect.TypeOf(v.Load()))
+}
+
+func (v *atomicValue) Scan(obj interface{}) error {
+	data, err := json.Marshal(v.Load())
+	if err != nil {
+		return err
+	}
+	if pb, ok := obj.(proto.Message); ok {
+		return json.Unmarshal(data, pb)
+	}
+	return json.Unmarshal(data, obj)
+}
+
+type errValue struct {
+	err error
 }
 
 func (v *atomicValue) Bool() (bool, error) {
@@ -71,34 +82,6 @@ func (v *atomicValue) Int() (int64, error) {
 		return strconv.ParseInt(val, 10, 64)
 	}
 	return 0, v.typeAssertError()
-}
-
-func (v *atomicValue) Slice() ([]Value, error) {
-	vals, ok := v.Load().([]interface{})
-	if !ok {
-		return nil, v.typeAssertError()
-	}
-	slices := make([]Value, 0, len(vals))
-	for _, val := range vals {
-		a := new(atomicValue)
-		a.Store(val)
-		slices = append(slices, a)
-	}
-	return slices, nil
-}
-
-func (v *atomicValue) Map() (map[string]Value, error) {
-	vals, ok := v.Load().(map[string]interface{})
-	if !ok {
-		return nil, v.typeAssertError()
-	}
-	m := make(map[string]Value, len(vals))
-	for key, val := range vals {
-		a := new(atomicValue)
-		a.Store(val)
-		m[key] = a
-	}
-	return m, nil
 }
 
 func (v *atomicValue) Float() (float64, error) {
@@ -147,36 +130,10 @@ func (v *atomicValue) String() (string, error) {
 	return "", v.typeAssertError()
 }
 
-func (v *atomicValue) Duration() (time.Duration, error) {
-	val, err := v.Int()
-	if err != nil {
-		return 0, err
-	}
-	return time.Duration(val), nil
-}
-
-func (v *atomicValue) Scan(obj interface{}) error {
-	data, err := json.Marshal(v.Load())
-	if err != nil {
-		return err
-	}
-	if pb, ok := obj.(proto.Message); ok {
-		return json.Unmarshal(data, pb)
-	}
-	return json.Unmarshal(data, obj)
-}
-
-type errValue struct {
-	err error
-}
-
-func (v errValue) Bool() (bool, error)              { return false, v.err }
-func (v errValue) Int() (int64, error)              { return 0, v.err }
-func (v errValue) Float() (float64, error)          { return 0.0, v.err }
-func (v errValue) Duration() (time.Duration, error) { return 0, v.err }
-func (v errValue) String() (string, error)          { return "", v.err }
-func (v errValue) Scan(interface{}) error           { return v.err }
-func (v errValue) Load() interface{}                { return nil }
-func (v errValue) Store(interface{})                {}
-func (v errValue) Slice() ([]Value, error)          { return nil, v.err }
-func (v errValue) Map() (map[string]Value, error)   { return nil, v.err }
+func (v errValue) Bool() (bool, error)     { return false, v.err }
+func (v errValue) Int() (int64, error)     { return 0, v.err }
+func (v errValue) Float() (float64, error) { return 0.0, v.err }
+func (v errValue) String() (string, error) { return "", v.err }
+func (v errValue) Scan(interface{}) error  { return v.err }
+func (v errValue) Load() interface{}       { return nil }
+func (v errValue) Store(interface{})       {}
