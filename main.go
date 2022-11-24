@@ -24,7 +24,6 @@ func main() {
 		} `json:"service"`
 	}
 
-	//// Unmarshal the config to struct
 	if err := c.Scan(&v); err != nil {
 		panic(err)
 	}
