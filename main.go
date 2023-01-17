@@ -46,62 +46,15 @@ func loggingFilter(next http.Handler) http.Handler {
 	})
 }
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "hello world")
-}
-
-func ProductsHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "hello, Products")
-}
-
 func main() {
-
-	ctx := context.Background()
-	srv := trs.NewServer(
-
-		//trs.Filter(corsFilter, loggingFilter),
-	)
-
-	//srv.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-	//	writer.WriteHeader(http.StatusOK)
-	//	fmt.Fprintf(writer, "hello world xxxxxxxxxxxxxxxxxxx")
-	//})
-
-	//
-	//route := srv.Route("/v1")
-	srv.Route("/v1").GET("/users/{name}", func(ctx trs.Context) error {
-		u := new(User)
-		u.Name = ctx.Vars().Get("name")
-		fmt.Println(ctx.Vars().Get("name"))
-		return ctx.Result(200, u)
-	})
-
-	//http.ListenAndServe(":8080", srv.Handler)
-
-	if e, err := srv.Endpoint(); err != nil || e == nil {
-		log.Fatal(e, err)
-	}
-	go func() {
-		if err := srv.Start(ctx); err != nil {
-			panic(err)
-		}
-	}()
-
-	time.Sleep(30 * time.Second)
+	configDemo()
 }
 
 func configDemo() {
-	c := config.New(config.WithSource(file.NewSource("./config.yaml")))
+	c := config.New(config.WithSource(file.NewSource("src/gm_go/config.yaml")))
 	if err := c.Load(); err != nil {
 		panic(err)
 	}
-	/**
-	service:
-	  name: config
-	  version: v1.0.0
-	*/
 
 	var v struct {
 		Service struct {
@@ -120,4 +73,43 @@ func configDemo() {
 		panic(err)
 	}
 	fmt.Println(name)
+}
+
+func httpRouterDemo() {
+	ctx := context.Background()
+	srv := trs.NewServer(
+		trs.Filter(corsFilter, loggingFilter),
+	)
+
+	//srv.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+	//	writer.WriteHeader(http.StatusOK)
+	//	fmt.Fprintf(writer, "hello world xxxxxxxxxxxxxxxxxxx")
+	//})
+
+	//
+	//route := srv.Route("/v1")
+	srv.Route("/v1").GET("/users/{name}", func(ctx trs.Context) error {
+		u := new(User)
+		u.Name = ctx.Vars().Get("name")
+		//fmt.Println(ctx.Vars().Get("name"))
+
+		_ = ctx.String(200, u.Name)
+		return nil
+		//return ctx.Result(200, u)
+
+	})
+
+	http.ListenAndServe(":8080", srv.Handler)
+
+	if e, err := srv.Endpoint(); err != nil || e == nil {
+		log.Fatal(e, err)
+	}
+	go func() {
+		if err := srv.Start(ctx); err != nil {
+			panic(err)
+		}
+	}()
+
+	time.Sleep(30 * time.Second)
+	_ = srv.Stop(ctx)
 }

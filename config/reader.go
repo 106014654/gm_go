@@ -34,17 +34,19 @@ func newReader(opts options) Reader {
 }
 
 func (r *reader) Merge(kvs ...*KeyValue) error {
-	merged, err := r.cloneMap()
+	merged, err := r.cloneMap() //创建key value相同结构
 	if err != nil {
 		return err
 	}
 
 	for _, kv := range kvs {
 		next := make(map[string]interface{})
+		//校验是否能够正常解析
 		if err := r.opts.decoder(kv, next); err != nil {
 			log.Errorf("Failed to config decode error: %v key: %s value: %s", err, kv.Key, string(kv.Value))
 			return err
 		}
+		//合并传入的值与新建的结构
 		if err := mergo.Map(&merged, convertMap(next), mergo.WithOverride); err != nil {
 			log.Errorf("Failed to config merge error: %v key: %s value: %s", err, kv.Key, string(kv.Value))
 			return err

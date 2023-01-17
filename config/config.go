@@ -67,6 +67,7 @@ func (c *config) Value(key string) Value {
 	if v, ok := c.cached.Load(key); ok {
 		return v.(Value)
 	}
+
 	if v, ok := c.reader.Value(key); ok {
 		c.cached.Store(key, v)
 		return v

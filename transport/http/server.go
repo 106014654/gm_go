@@ -18,6 +18,8 @@ type ServerOption func(*Server)
 
 type EncodeErrorFunc func(http.ResponseWriter, *http.Request, error)
 
+type EncodeResponseFunc func(http.ResponseWriter, *http.Request, interface{}) error
+
 type Server struct {
 	*http.Server
 	lis         net.Listener
@@ -29,6 +31,7 @@ type Server struct {
 	timeout     time.Duration
 	filters     []FilterFunc
 	enefunc     EncodeErrorFunc
+	enc         EncodeResponseFunc
 	strictSlash bool
 	router      *mux.Router
 }

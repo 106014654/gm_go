@@ -14,6 +14,7 @@
 可执行功能脚本
 
 #### config
+核心方法Load(加载),Scan(获取内容),Value(获取指定key下的内容),
 通过加载文件的方式，将需要的配置文件解析成 map[string]interface()，通过第三包[imdario/mergo](github.com/imdario/mergo) 将读取的文件信息赋值，通过 automic 进行原子性赋值加入到 sync.Map 当中方便后续读取；
 
 #### encoding
@@ -23,4 +24,14 @@
 
 #### log
 
-    
+
+#### 学习笔记
+方法可以将函数作为返回值，
+
+type Option func(*options)
+
+func WithSource(s ...Source) Option {
+    return func(o *options) {
+    o.sources = s
+    }
+}
