@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 	"gm_go/config"
 	"gm_go/config/file"
-	"gm_go/convert"
 	logs "gm_go/log"
 	trs "gm_go/transport/http"
 	"log"
@@ -50,7 +51,13 @@ func loggingFilter(next http.Handler) http.Handler {
 }
 
 func main() {
-	convert.InitCovertTool()
+	db, err := sqlx.Connect("mysql", "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=true&loc=Local")
+	if err != nil {
+		log.Println("数据库连接失败")
+	}
+	insertResult := db.MustExec("INSERT INTO Person (Name, City, AddTime, UpdateTime) VALUES (?, ?, ?, ?)", "Zhang San", "Beijing", time.Now(), time.Now())
+	lastInsertId, _ := insertResult.LastInsertId()
+	log.Println("Insert Id is ", lastInsertId)
 }
 
 func configDemo() {
