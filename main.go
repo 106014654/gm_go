@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"gm_go/config"
 	"gm_go/config/file"
+	"gm_go/convert"
+	logs "gm_go/log"
 	trs "gm_go/transport/http"
 	"log"
 	"net/http"
@@ -47,7 +50,7 @@ func loggingFilter(next http.Handler) http.Handler {
 }
 
 func main() {
-	configDemo()
+	convert.InitCovertTool()
 }
 
 func configDemo() {
@@ -81,19 +84,12 @@ func httpRouterDemo() {
 		trs.Filter(corsFilter, loggingFilter),
 	)
 
-	//srv.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-	//	writer.WriteHeader(http.StatusOK)
-	//	fmt.Fprintf(writer, "hello world xxxxxxxxxxxxxxxxxxx")
-	//})
-
-	//
-	//route := srv.Route("/v1")
-	srv.Route("/v1").GET("/users/{name}", func(ctx trs.Context) error {
+	srv.Route("/v1").Group("/www").GET("/users/{name}", func(ctx trs.Context) error {
 		u := new(User)
 		u.Name = ctx.Vars().Get("name")
 		//fmt.Println(ctx.Vars().Get("name"))
 
-		_ = ctx.String(200, u.Name)
+		_ = ctx.JSON(200, u.Name)
 		return nil
 		//return ctx.Result(200, u)
 
@@ -112,4 +108,10 @@ func httpRouterDemo() {
 
 	time.Sleep(30 * time.Second)
 	_ = srv.Stop(ctx)
+}
+
+func logDemo() {
+	logs.Initlog("./", "test")
+	logrus.WithFields(logrus.Fields{"animal": "walrus"}).Info("a walrus appears")
+	logrus.Info("测试中文")
 }

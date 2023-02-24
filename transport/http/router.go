@@ -6,11 +6,6 @@ import (
 	"sync"
 )
 
-type RouteInfo struct {
-	Path   string
-	Method string
-}
-
 type HandlerFunc func(Context) error
 
 type Router struct {

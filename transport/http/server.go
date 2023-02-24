@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"crypto/tls"
+
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"gm_go/transport"
@@ -23,7 +23,6 @@ type EncodeResponseFunc func(http.ResponseWriter, *http.Request, interface{}) er
 type Server struct {
 	*http.Server
 	lis         net.Listener
-	tlsConf     *tls.Config
 	endpoint    *url.URL
 	err         error
 	network     string
@@ -51,8 +50,7 @@ func NewServer(opts ...ServerOption) *Server {
 	srv.router.MethodNotAllowedHandler = http.DefaultServeMux
 	srv.router.Use(srv.filter())
 	srv.Server = &http.Server{
-		Handler:   FilterChain(srv.filters...)(srv.router),
-		TLSConfig: srv.tlsConf,
+		Handler: FilterChain(srv.filters...)(srv.router),
 	}
 	return srv
 }
@@ -85,7 +83,7 @@ func (s *Server) listenAndEndpoint() error {
 			s.err = err
 			return err
 		}
-		s.endpoint = transport.NewEndpoint(transport.Scheme("http", s.tlsConf != nil), addr)
+		s.endpoint = transport.NewEndpoint(transport.Scheme("http", false), addr)
 	}
 	return s.err
 }
@@ -135,11 +133,9 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	log.Infof("[HTTP] server listening on: %s", s.lis.Addr().String())
 	var err error
-	if s.tlsConf != nil {
-		err = s.ServeTLS(s.lis, "", "")
-	} else {
-		err = s.Serve(s.lis)
-	}
+
+	err = s.Serve(s.lis)
+
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
